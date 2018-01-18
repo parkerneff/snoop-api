@@ -1,0 +1,4 @@
+info.app:
+  name: Snoop Sample API
+  decription: Lists some stuff
+  version: 1.0
