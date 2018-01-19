@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jose4j.jwa.AlgorithmConstraints;
+import org.jose4j.jwk.HttpsJwks;
 import org.jose4j.jwk.RsaJsonWebKey;
 import org.jose4j.jwk.RsaJwkGenerator;
 import org.jose4j.jws.AlgorithmIdentifiers;
@@ -12,6 +13,7 @@ import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.jwt.consumer.JwtConsumer;
 import org.jose4j.jwt.consumer.JwtConsumerBuilder;
+import org.jose4j.keys.resolvers.HttpsJwksVerificationKeyResolver;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -105,11 +107,21 @@ public class RestEndpointTests {
     @Test
     public void getTokenInvalidPublicKey() throws Exception {
         @SuppressWarnings("rawtypes")
+
+
+
+
+
         JwtRequest jwtRequest = new JwtRequest();
         jwtRequest.setSubject("parkerneff");
 
 
         jwtRequest.setRoles(new String[]{"admin", "user"});
+
+
+
+
+
         HttpEntity<JwtRequest> request = new HttpEntity<>(jwtRequest);
         String token = this.testRestTemplate.postForObject("http://localhost:" + this.port + "/token", request, String.class);
         System.out.println("TOKEN=" + token);
@@ -137,6 +149,44 @@ public class RestEndpointTests {
         } catch (InvalidJwtException e) {
             System.out.println("Cool I got=" + e.getMessage());
 
+        }
+
+
+    }
+
+    @Test
+    public void testValidJwk() throws Exception {
+        @SuppressWarnings("rawtypes")
+
+
+
+        HttpsJwks httpsJkws = new HttpsJwks("http://localhost:" + this.port + "/jwks");
+        HttpsJwksVerificationKeyResolver httpsJwksKeyResolver = new HttpsJwksVerificationKeyResolver(httpsJkws);
+
+        JwtRequest jwtRequest = new JwtRequest();
+        jwtRequest.setSubject("parkerneff");
+
+
+        jwtRequest.setRoles(new String[]{"admin", "user"});
+        HttpEntity<JwtRequest> request = new HttpEntity<>(jwtRequest);
+        String token = this.testRestTemplate.postForObject("http://localhost:" + this.port + "/token", request, String.class);
+        System.out.println("TOKEN=" + token);
+        assertNotNull(token);
+
+
+        JwtConsumer jwtConsumer = new JwtConsumerBuilder()
+                .setRequireExpirationTime() // the JWT must have an expiration time
+                .setAllowedClockSkewInSeconds(30) // allow some leeway in validating time based claims to account for clock skew
+                .setRequireSubject() // the JWT must have a subject claim
+                .setExpectedIssuer("parker-idp") // whom the JWT needs to have been issued by
+                .setExpectedAudience("Audience") // to whom the JWT is intended for
+                .setVerificationKeyResolver(httpsJwksKeyResolver)
+                .build(); // create the JwtConsumer instance
+
+        try {
+            JwtClaims jwtClaims = jwtConsumer.processToClaims(token);
+        } catch (InvalidJwtException e) {
+            fail(e.getMessage());
         }
 
 

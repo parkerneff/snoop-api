@@ -2,6 +2,7 @@ package com.parkerneff.snoopapi;
 
 
 
+import org.jose4j.jwk.JsonWebKeySet;
 import org.jose4j.jwk.RsaJsonWebKey;
 import org.jose4j.jwk.RsaJwkGenerator;
 import org.jose4j.jws.AlgorithmIdentifiers;
@@ -28,11 +29,16 @@ public class TokenController {
     @Autowired
     private PrivateKey privateKey;
 
+    @Autowired
+    private JsonWebKeySet jsonWebKeySet;
+
     @RequestMapping(value = "/token", method = RequestMethod.POST)
     public String generateToken(@RequestBody JwtRequest jwtRequest) {
 
 
         try {
+
+
             // Generate an RSA key pair, which will be used for signing and verification of the JWT, wrapped in a JWK
 //            RsaJsonWebKey rsaJsonWebKey = RsaJwkGenerator.generateJwk(2048);
 //            RsaJwkGenerator.
@@ -93,9 +99,9 @@ public class TokenController {
 
     }
 
-    @RequestMapping("/key")
-    public byte[] greeting() {
-        return null;
+    @RequestMapping("/jwks")
+    public String getJwk() {
+        return jsonWebKeySet.toJson();
 
     }
 
