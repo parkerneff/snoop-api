@@ -59,11 +59,12 @@ public class RestEndpointTests {
     @Test
     public void getToken() throws Exception {
         @SuppressWarnings("rawtypes")
+        JwtRequest jwtRequest = new JwtRequest();
+        jwtRequest.setSubject("parkerneff");
 
-        Map<String, String> claims = new HashMap<>();
-        claims.put("firstname", "parker");
-        claims.put("lastname", "neff");
-        HttpEntity<Map> request = new HttpEntity<>(claims);
+
+        jwtRequest.setRoles(new String[]{"admin", "user"});
+        HttpEntity<JwtRequest> request = new HttpEntity<>(jwtRequest);
         String token = this.testRestTemplate.postForObject("http://localhost:" + this.port + "/token", request, String.class);
         System.out.println("TOKEN=" + token);
         assertNotNull(token);

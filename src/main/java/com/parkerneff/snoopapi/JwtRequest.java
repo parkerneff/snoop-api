@@ -9,6 +9,6 @@ import java.util.Map;
 public class JwtRequest {
     @Getter @Setter private String subject;
     @Getter @Setter private String[] roles;
-    @Getter @Setter private Map<String, Object> additonalClaims;
+
 
 }

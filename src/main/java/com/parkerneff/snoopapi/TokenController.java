@@ -1,11 +1,12 @@
 package com.parkerneff.snoopapi;
 
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.impl.crypto.MacProvider;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.UnsupportedEncodingException;
 import java.security.Key;
 import java.security.KeyPair;
 
@@ -22,13 +23,21 @@ public class TokenController {
     @RequestMapping(value = "/token", method = RequestMethod.POST)
     public String generateToken(@RequestBody JwtRequest jwtRequest) {
         // Create RSA-signer with the private key
-        Key key = MacProvider.generateKey();
+        //HMAC
+        String token = null;
+        try {
+            Algorithm algorithm = Algorithm.HMAC256("secret");
+             token = JWT.create()
+                    .withIssuer("parkers-idp")
+                    .withSubject(jwtRequest.getSubject())
+                    .withArrayClaim("roles", jwtRequest.getRoles())
+                    .sign(algorithm);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
 
 
-       return Jwts.builder()
-                .setSubject(jwtRequest.getSubject()).setClaims(jwtRequest.getAdditonalClaims())
-                .signWith(SignatureAlgorithm.HS512, key)
-                .compact();
+       return  token;
 
 
 
