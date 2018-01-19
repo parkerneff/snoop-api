@@ -1,32 +1,43 @@
 package com.parkerneff.snoopapi;
 
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.impl.crypto.MacProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
+import java.security.Key;
+import java.security.KeyPair;
+
+
 
 
 @RestController
 public class TokenController {
-
-    private static final String template = "Hello, %s!";
-    private final AtomicLong counter = new AtomicLong();
+    // https://connect2id.com/products/nimbus-jose-jwt/examples/jwt-with-rsa-signature
+// https://github.com/jwtk/jjwt
+    @Autowired
+    private KeyPair keyPair;
 
     @RequestMapping(value = "/token", method = RequestMethod.POST)
-    public String generateToken(@RequestBody Map<String, String> claims) {
+    public String generateToken(@RequestBody JwtRequest jwtRequest) {
+        // Create RSA-signer with the private key
+        Key key = MacProvider.generateKey();
 
-        if (claims != null) {
-            StringBuilder sb = new StringBuilder();
-            for (String key : claims.keySet()) {
-                sb.append(key);
-                sb.append("=");
-                sb.append(claims.get(key));
-                sb.append(",");
-            }
-            return sb.toString();
-        } else {
-            return "error";
-        }
+
+       return Jwts.builder()
+                .setSubject(jwtRequest.getSubject()).setClaims(jwtRequest.getAdditonalClaims())
+                .signWith(SignatureAlgorithm.HS512, key)
+                .compact();
+
+
 
     }
+
+    @RequestMapping("/key")
+    public byte[] greeting() {
+        return keyPair.getPublic().getEncoded();
+
+    }
+
 }
