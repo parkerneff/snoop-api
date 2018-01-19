@@ -1,26 +1,98 @@
 package com.parkerneff.snoopapi;
 
+import org.apache.commons.io.FileUtils;
+
+import org.apache.commons.io.IOUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.security.*;
+
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
+
+// https://adangel.org/2016/08/29/openssl-rsa-java/
 @Configuration
 public class JwtKeyConfiguration {
 
     @Bean
-    public KeyPair keyPair() {
+    public PrivateKey privateKey() {
+
         try {
-            KeyPairGenerator keyGenerator = KeyPairGenerator.getInstance("RSA");
-            keyGenerator.initialize(1024);
-            return keyGenerator.generateKeyPair();
+            String privateKeyPEM = IOUtils.resourceToString("private-pkcs8.pem", StandardCharsets.UTF_8, this.getClass().getClassLoader());
+
+           // String privateKeyPEM = FileUtils.readFileToString(new File("private-pkcs8.pem"), StandardCharsets.UTF_8);
+
+
+            // strip of header, footer, newlines, whitespaces
+            privateKeyPEM = privateKeyPEM
+                    .replace("-----BEGIN PRIVATE KEY-----", "")
+                    .replace("-----END PRIVATE KEY-----", "")
+                    .replaceAll("\\s", "");
+
+            // decode to get the binary DER representation
+            byte[] privateKeyDER = Base64.getDecoder().decode(privateKeyPEM);
+
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            PrivateKey privateKey = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(privateKeyDER));
+            return privateKey;
+
+        } catch (IOException e1) {
+            e1.printStackTrace();
+        } catch (InvalidKeySpecException e) {
+
+
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e.getMessage());
+
+            return null;
         }
-
+        return null;
     }
+    @Bean
+    public PublicKey getPublicKey() {
+
+        try {
+            String publicKeyPEM = IOUtils.resourceToString("public.pem", StandardCharsets.UTF_8, this.getClass().getClassLoader());
 
 
+
+
+            // strip of header, footer, newlines, whitespaces
+            publicKeyPEM = publicKeyPEM
+                    .replace("-----BEGIN PUBLIC KEY-----", "")
+                    .replace("-----END PUBLIC KEY-----", "")
+                    .replaceAll("\\s", "");
+
+            // decode to get the binary DER representation
+            byte[] publicKeyDER = Base64.getDecoder().decode(publicKeyPEM);
+
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            PublicKey publicKey = keyFactory.generatePublic(new X509EncodedKeySpec(publicKeyDER));
+            return publicKey;
+
+        } catch (IOException e1) {
+            e1.printStackTrace();
+        } catch (InvalidKeySpecException e) {
+
+
+        } catch (NoSuchAlgorithmException e) {
+
+            return null;
+        }
+        return null;
+    }
 }
+
+
+
+
